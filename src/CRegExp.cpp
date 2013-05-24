@@ -523,7 +523,7 @@ find(const std::string &str) const
     if (case_sensitive_)
       rc = pattern_.compare(str_);
     else
-      rc = CStrUtil::cmpNoCase(pattern_, str_);
+      rc = CStrUtil::casecmp(pattern_, str_);
   }
 
   return (rc == 0);

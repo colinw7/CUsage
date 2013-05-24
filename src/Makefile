@@ -6,6 +6,7 @@ LDEBUG = -g
 
 INC_DIR  = ../include
 OBJ_DIR  = ../obj
+LIB_DIR  = ../lib
 EXEC_DIR = ../exec
 
 all: $(EXEC_DIR)/CUsage
@@ -13,6 +14,11 @@ all: $(EXEC_DIR)/CUsage
 clean:
 	$(RM) -f $(OBJ_DIR)/*.o
 	$(RM) -f $(EXEC_DIR)/CUsage
+
+SRC = \
+CUsage.cpp \
+CRegExp.cpp \
+CDirFTW.cpp
 
 CUsage.cpp: CUsage.h CFileUtil.h
 
@@ -26,16 +32,14 @@ CDirFTW.h: CFileType.h
 
 CFileUtil.h: CFileType.h
 
+OBJS = $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(SRC))
+
+CPPFLAGS = -I$(INC_DIR) -I.
+
 .SUFFIXES: .cpp
 
-$(OBJ_DIR)/CUsage.o: CUsage.cpp
-	$(CC) $(CDEBUG) -o $(OBJ_DIR)/CUsage.o -c CUsage.cpp -I$(INC_DIR) -I.
-
-$(OBJ_DIR)/CRegExp.o: CRegExp.cpp
-	$(CC) $(CDEBUG) -o $(OBJ_DIR)/CRegExp.o -c CRegExp.cpp -I$(INC_DIR) -I.
-
-$(OBJ_DIR)/CDirFTW.o: CDirFTW.cpp
-	$(CC) $(CDEBUG) -o $(OBJ_DIR)/CDirFTW.o -c CDirFTW.cpp -I$(INC_DIR) -I.
+$(OBJS): $(OBJ_DIR)/%.o: %.cpp
+	$(CC) -c $< -o $(OBJ_DIR)/$*.o $(CPPFLAGS)
 
 $(EXEC_DIR)/CUsage: $(OBJ_DIR)/CUsage.o $(OBJ_DIR)/CRegExp.o $(OBJ_DIR)/CDirFTW.o
-	$(CC) $(LDEBUG) -o $(EXEC_DIR)/CUsage $(OBJ_DIR)/CUsage.o $(OBJ_DIR)/CRegExp.o $(OBJ_DIR)/CDirFTW.o -ltre
+	$(CC) $(LDEBUG) -o $(EXEC_DIR)/CUsage $(OBJS) -L$(LIB_DIR) -lCStrUtil -ltre
