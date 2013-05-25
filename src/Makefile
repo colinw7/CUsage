@@ -4,16 +4,16 @@ RM = rm
 CDEBUG = -g
 LDEBUG = -g
 
-INC_DIR  = ../include
-OBJ_DIR  = ../obj
-LIB_DIR  = ../lib
-EXEC_DIR = ../exec
+INC_DIR = ../include
+OBJ_DIR = ../obj
+LIB_DIR = ../lib
+BIN_DIR = ../bin
 
-all: $(EXEC_DIR)/CUsage
+all: $(BIN_DIR)/CUsage
 
 clean:
 	$(RM) -f $(OBJ_DIR)/*.o
-	$(RM) -f $(EXEC_DIR)/CUsage
+	$(RM) -f $(BIN_DIR)/CUsage
 
 SRC = \
 CUsage.cpp \
@@ -41,5 +41,5 @@ CPPFLAGS = -I$(INC_DIR) -I.
 $(OBJS): $(OBJ_DIR)/%.o: %.cpp
 	$(CC) -c $< -o $(OBJ_DIR)/$*.o $(CPPFLAGS)
 
-$(EXEC_DIR)/CUsage: $(OBJ_DIR)/CUsage.o $(OBJ_DIR)/CRegExp.o $(OBJ_DIR)/CDirFTW.o
-	$(CC) $(LDEBUG) -o $(EXEC_DIR)/CUsage $(OBJS) -L$(LIB_DIR) -lCStrUtil -ltre
+$(BIN_DIR)/CUsage: $(OBJ_DIR)/CUsage.o $(OBJ_DIR)/CRegExp.o $(OBJ_DIR)/CDirFTW.o
+	$(CC) $(LDEBUG) -o $(BIN_DIR)/CUsage $(OBJS) -L$(LIB_DIR) -lCStrUtil -ltre
