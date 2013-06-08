@@ -31,6 +31,8 @@ CPPFLAGS = \
 LFLAGS = \
 $(LEBUG) \
 -L$(LIB_DIR) \
+-L../../CFile/lib \
+-L../../CStrUtil/lib \
 -lCFile \
 -lCStrUtil
 
