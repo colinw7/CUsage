@@ -17,13 +17,13 @@ clean:
 
 SRC = \
 CUsage.cpp \
-CRegExp.cpp \
 
 OBJS = $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(SRC))
 
 CPPFLAGS = \
 -I$(INC_DIR) \
 -I../../CFile/include \
+-I../../CRegExp/include \
 -I../../CStrUtil/include \
 -I../../CUtil/include \
 -I.
@@ -32,8 +32,10 @@ LFLAGS = \
 $(LEBUG) \
 -L$(LIB_DIR) \
 -L../../CFile/lib \
+-L../../CRegExp/lib \
 -L../../CStrUtil/lib \
 -lCFile \
+-lCRegExp \
 -lCStrUtil
 
 .SUFFIXES: .cpp
