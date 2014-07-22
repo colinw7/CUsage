@@ -98,15 +98,15 @@ usage[] = {
 class CUsage;
 
 class CUsageDirWalk : public CDirFTW {
- private:
-  CUsage *unix_usage_;
-
  public:
   CUsageDirWalk(CUsage *unix_usage, const std::string &dirname) :
    CDirFTW(dirname), unix_usage_(unix_usage) {
   }
 
   void process();
+
+ private:
+  CUsage *unix_usage_;
 };
 
 struct CUsageFileSpec {
@@ -133,27 +133,40 @@ class CUsage {
   void process();
 
   void   processDirectory(const std::string &, int);
+
   void   updateFileLists(const std::string &, const struct stat *, CFileType);
+
   void   addLargestFileSpec(CUsageFileSpec *file_spec);
   void   addSmallestFileSpec(CUsageFileSpec *file_spec);
   void   addOldestFileSpec(CUsageFileSpec *file_spec);
   void   addNewestFileSpec(CUsageFileSpec *file_spec);
+
   void   addFileUsage(const std::string &, size_t);
+
   void   addDirUsage(const std::string &, size_t);
+
   void   deleteDirectory(char *);
+
   int    addLargestFile(CUsageFileSpec *, CUsageFileSpec *);
   int    addSmallestFile(CUsageFileSpec *, CUsageFileSpec *);
   int    addOldestFile(CUsageFileSpec *, CUsageFileSpec *);
   int    addNewestFile(CUsageFileSpec *, CUsageFileSpec *);
+
   void   deleteFileSpec(CUsageFileSpec *);
+
   void   printLargestFile(CUsageFileSpec *);
   void   printSmallestFile(CUsageFileSpec *);
   void   printOldestFile(CUsageFileSpec *);
   void   printNewestFile(CUsageFileSpec *);
+
   void   printDirUsages(void);
+
   void   addDirUsageToArray(CUsageDirUsage *, CUsageDirUsage ***);
+
   void   setFileSpecLength(CUsageFileSpec *);
+
   time_t statTime(const struct stat *);
+
   void   error(const char *, ...);
 
  private:
@@ -173,6 +186,7 @@ class CUsage {
   bool            short_line_form;
   bool            stream_form;
   bool            follow_links;
+  bool            ignore_hidden;
   int             total_output;
   DirNameList     directory_list;
   uint            num_largest;

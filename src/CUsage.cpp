@@ -52,6 +52,7 @@
  *   -sl              Display Output in short line form for easy batch processing.
  *   -S               Display Output in stream form for feeding into other commands
  *   -L               follow links
+ *   -H               ignore hidden (dot files)
  *   -mp <pattern>    only display files matching pattern
  *   -mn <pattern>    only display files not matching pattern
  *   -mt <type>       only display files matching type :=
@@ -108,6 +109,7 @@ processOptions(int argc, char **argv)
   short_line_form = false;
   stream_form     = false;
   follow_links    = false;
+  ignore_hidden   = false;
 
   total_output = 0;
 
@@ -243,6 +245,10 @@ processOptions(int argc, char **argv)
           break;
         case 'L':
           follow_links = true;
+
+          break;
+        case 'H':
+          ignore_hidden = true;
 
           break;
         case 'm':
@@ -660,6 +666,23 @@ updateFileLists(const std::string &filename, const struct stat *ftw_stat, CFileT
 
     if (! match)
       return;
+  }
+
+  /*--------------------------------------------------------*/
+
+  if (ignore_hidden) {
+    std::string filename1 = filename;
+
+    std::string::size_type pos = filename1.rfind('/');
+
+    while (pos != std::string::npos) {
+      if (filename1[pos + 1] == '.')
+        return;
+
+      filename1 = filename1.substr(0, pos);
+
+      pos = filename1.rfind('/');
+    }
   }
 
   /*--------------------------------------------------------*/
