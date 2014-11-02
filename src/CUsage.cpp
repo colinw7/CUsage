@@ -118,10 +118,10 @@ processOptions(int argc, char **argv)
   num_days = -1;
 
   match_pattern    = "";
-  match_regex      = NULL;
+  match_regex      = 0;
   match_pattern    = "";
   no_match_pattern = "";
-  no_match_regex   = NULL;
+  no_match_regex   = 0;
 
   directory_list.clear();
 
@@ -334,7 +334,7 @@ process()
     match_regex->setMatchEOL(false);
   }
   else
-    match_regex = NULL;
+    match_regex = 0;
 
   if (no_match_pattern != "") {
     no_match_regex = new CRegExp(no_match_pattern);
@@ -344,7 +344,7 @@ process()
     no_match_regex->setMatchEOL(false);
   }
   else
-    no_match_regex = NULL;
+    no_match_regex = 0;
 
   /*--------------------------------------------------------*/
 
@@ -361,7 +361,7 @@ process()
 
   /* Get Current Time */
 
-  current_time = time(NULL);
+  current_time = time(0);
 
   /*--------------------------------------------------------*/
 
@@ -636,10 +636,10 @@ void
 CUsage::
 updateFileLists(const std::string &filename, const struct stat *ftw_stat, CFileType type)
 {
-  if (   match_regex != NULL &&  ! match_regex->find(filename))
+  if (   match_regex != 0 &&  ! match_regex->find(filename))
     return;
 
-  if (no_match_regex != NULL && no_match_regex->find(filename))
+  if (no_match_regex != 0 && no_match_regex->find(filename))
     return;
 
   if (match_type != "" && type != CFILE_TYPE_INODE_DIR) {
@@ -984,7 +984,7 @@ addDirUsage(const std::string &dirname, size_t size)
 {
   DirUsageMap::iterator pdir = dir_usage_list.find(dirname);
 
-  CUsageDirUsage *dir_usage = NULL;
+  CUsageDirUsage *dir_usage = 0;
 
   if (pdir == dir_usage_list.end()) {
     dir_usage = new CUsageDirUsage;
