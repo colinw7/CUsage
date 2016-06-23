@@ -1,9 +1,6 @@
 #include <CUsage.h>
 #include <CFileUtil.h>
 
-#include <sys/stat.h>
-
-#include <cstdarg>
 #include <cstring>
 #include <cstdio>
 #include <algorithm>
@@ -692,7 +689,7 @@ updateFileLists(const std::string &filename, const struct stat *ftw_stat, CFileT
   if (type == CFILE_TYPE_INODE_DIR) {
     /* If link add link size and set link directory ... */
 
-    if (CFileUtil::isLink(filename)) {
+    if (CFile::isLink(filename)) {
       struct stat my_stat;
 
       lstat(filename.c_str(), &my_stat);
@@ -714,7 +711,7 @@ updateFileLists(const std::string &filename, const struct stat *ftw_stat, CFileT
 
   /* If link add link size but don't include in file lists */
 
-  if (CFileUtil::isLink(filename)) {
+  if (CFile::isLink(filename)) {
     struct stat my_stat;
 
     lstat(filename.c_str(), &my_stat);

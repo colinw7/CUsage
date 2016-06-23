@@ -23,6 +23,7 @@ OBJS = $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(SRC))
 CPPFLAGS = \
 -I$(INC_DIR) \
 -I../../CFile/include \
+-I../../CFileUtil/include \
 -I../../CRegExp/include \
 -I../../CStrUtil/include \
 -I../../CUtil/include \
@@ -31,10 +32,14 @@ CPPFLAGS = \
 LFLAGS = \
 $(LEBUG) \
 -L$(LIB_DIR) \
+-L../../CFileUtil/lib \
 -L../../CFile/lib \
+-L../../COS/lib \
 -L../../CRegExp/lib \
 -L../../CStrUtil/lib \
+-lCFileUtil \
 -lCFile \
+-lCOS \
 -lCRegExp \
 -lCStrUtil
 

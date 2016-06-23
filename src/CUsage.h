@@ -1,14 +1,12 @@
 #ifndef CUsage_H
 #define CUsage_H
 
-#include <sys/types.h>
-
 #include <CRegExp.h>
+#include <CFile.h>
+#include <CDir.h>
 #include <CDirFTW.h>
 #include <CStrUtil.h>
 #include <CFuncs.h>
-
-#include <list>
 #include <map>
 
 #define TOTAL_M (1<<0)
