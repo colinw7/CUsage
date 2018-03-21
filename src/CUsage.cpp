@@ -609,10 +609,10 @@ processDirectory(const std::string &directory, int num_directories)
 
   /*------*/
 
-  for_each(largest_file_list.begin(), largest_file_list.end(), CDeletePointer());
-  for_each(smallest_file_list.begin(), smallest_file_list.end(), CDeletePointer());
-  for_each(oldest_file_list.begin(), oldest_file_list.end(), CDeletePointer());
-  for_each(newest_file_list.begin(), newest_file_list.end(), CDeletePointer());
+  for (auto &file : largest_file_list ) delete file;
+  for (auto &file : smallest_file_list) delete file;
+  for (auto &file : oldest_file_list  ) delete file;
+  for (auto &file : newest_file_list  ) delete file;
 
   largest_file_list .clear();
   smallest_file_list.clear();
