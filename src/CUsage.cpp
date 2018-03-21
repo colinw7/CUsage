@@ -53,9 +53,10 @@
  *   -mp <pattern>    only display files matching pattern
  *   -mn <pattern>    only display files not matching pattern
  *   -mt <type>       only display files matching type :=
- *                      exe  - executable files
- *                      obj  - object files
- *                      core - core files
+ *                      exe   - executable files
+ *                      obj   - object files
+ *                      core  - core files
+ *                      image - image files
  *   -pd <days>       Number of days in the past to check
  *   <dir> ...        List of directories to process instead of the default
  *                    current directory.
@@ -653,6 +654,11 @@ updateFileLists(const std::string &filename, const struct stat *ftw_stat, CFileT
 
     if (! match && match_type == "exe") {
       if (file_type & CFILE_TYPE_BIN && file_type & CFILE_TYPE_EXEC)
+        match = true;
+    }
+
+    if (! match && match_type == "image") {
+      if (file_type & CFILE_TYPE_IMAGE)
         match = true;
     }
 
