@@ -9,17 +9,18 @@
 #include <CFuncs.h>
 #include <map>
 
-#define TOTAL_M (1<<0)
-#define TOTAL_K (1<<1)
-#define TOTAL_B (1<<2)
+#define TOTAL_G (1<<0)
+#define TOTAL_M (1<<1)
+#define TOTAL_K (1<<2)
+#define TOTAL_B (1<<3)
 
 #define DEFAULT_NUM_FILES 20
 #define DEFAULT_DIRECTORY "."
 
-enum CUsageDateType {
-  DATE_LAST_ACCESSED = 1,
-  DATE_LAST_MODIFIED = 2,
-  DATE_LAST_CHANGED  = 3
+enum class CUsageDateType {
+  LAST_ACCESSED = 1,
+  LAST_MODIFIED = 2,
+  LAST_CHANGED  = 3
 };
 
 static const char *
@@ -34,7 +35,7 @@ usage[] = {
   "  CUsage [-h] [-o <l|s|o|n>] [-n <num_files>]",
   "         [-nl <num_files>] [-ns <num_files>]",
   "         [-no <num_files>] [-nn <num_files>]",
-  "         [-da] [-dc] [-dm] [-tm] [-tk] [-tb]",
+  "         [-da] [-dc] [-dm] [-tg] [-tm] [-tk] [-tb]",
   "         [-s] [-L] [-mp <pattern>] [-mn <pattern>]",
   "         [<dir> ...]",
   "",
@@ -71,6 +72,7 @@ usage[] = {
   "                    comparison.",
   "    -dm             Uses the Last Modify Time for date",
   "                    comparison. (Default)",
+  "    -tg             Output the Total as Gigabytes.",
   "    -tm             Output the Total as Megabytes.",
   "    -tk             Output the Total as Kilobytes.",
   "    -tb             Output the Total as bytes.",
@@ -86,10 +88,9 @@ usage[] = {
   "                    of the default current directory.",
   "",
   "Notes :-",
-  "  The '-tm', '-tk' and '-tb' options can be combined",
-  "  to select any combination of totals, by default all",
-  "  three are shown which is the same as specifying",
-  "  '-tm -tk -tb'.",
+  "  The '-tg', '-tm', '-tk' and '-tb' options can be combined",
+  "  to select any combination of totals, by default all sizes",
+  "  are shown which is the same as specifying '-tg -tm -tk -tb'.",
   "",
 };
 

@@ -15,7 +15,7 @@
  *   CUsage [-h] [-o <l|s|o|n|d|c>] [-n <num_files>]
  *          [-nl <num_files>] [-ns <num_files>]
  *          [-no <num_files>] [-nn <num_files>]
- *          [-da] [-dc] [-dm] [-tm] [-tk] [-tb]
+ *          [-da] [-dc] [-dm] [-tg] [-tm] [-tk] [-tb]
  *          [-s] [<dir> ...]
  *
  *   -h               Displays this help text.
@@ -42,6 +42,7 @@
  *   -da              Uses the Last Access Time for date comparison.
  *   -dc              Uses the Last Change Time for date comparison.
  *   -dm              Uses the Last Modify Time for date comparison. (Default)
+ *   -tg              Output the Total as Gigabytes.
  *   -tm              Output the Total as Megabytes.
  *   -tk              Output the Total as Kilobytes.
  *   -tb              Output the Total as bytes.
@@ -62,9 +63,8 @@
  *                    current directory.
  *
  * Notes:
- *   The '-tm', '-tk' and '-tb' options can be combined to select any combination of
- *   totals, by default all three are shown which is the same as specifying
- *   '-tm -tk -tb'.
+ *   The '-tg', '-tm', '-tk' and '-tb' options can be combined to select any combination of
+ *   totals, by default sizes are shown which is the same as specifying '-tg -tm -tk -tb'.
  *
  *------------------------------------------------------------------*/
 
@@ -89,7 +89,7 @@ bool
 CUsage::
 processOptions(int argc, char **argv)
 {
-  date_type = DATE_LAST_MODIFIED;
+  date_type = CUsageDateType::LAST_MODIFIED;
 
   display_largest  = false;
   display_smallest = false;
@@ -149,7 +149,7 @@ processOptions(int argc, char **argv)
           int num_lines = sizeof(usage)/sizeof(char *);
 
           for (i = 0; i < num_lines; ++i)
-            std::cerr << usage[i] << std::endl;
+            std::cerr << usage[i] << "\n";
 
           exit(1);
 
@@ -210,17 +210,19 @@ processOptions(int argc, char **argv)
           break;
         case 'd':
           if      (argv[i][2] == 'a')
-            date_type = DATE_LAST_ACCESSED;
+            date_type = CUsageDateType::LAST_ACCESSED;
           else if (argv[i][2] == 'c')
-            date_type = DATE_LAST_CHANGED;
+            date_type = CUsageDateType::LAST_CHANGED;
           else if (argv[i][2] == 'm')
-            date_type = DATE_LAST_MODIFIED;
+            date_type = CUsageDateType::LAST_MODIFIED;
           else
             error("Invalid Date Specifier for \'%s\' Option", "-d[a|c|m]");
 
           break;
         case 't':
-          if      (argv[i][2] == 'm')
+          if      (argv[i][2] == 'g')
+            total_output |= TOTAL_G;
+          else if (argv[i][2] == 'm')
             total_output |= TOTAL_M;
           else if (argv[i][2] == 'k')
             total_output |= TOTAL_K;
@@ -290,7 +292,7 @@ processOptions(int argc, char **argv)
   }
 
   if (total_output == 0)
-    total_output = TOTAL_M | TOTAL_K | TOTAL_B;
+    total_output = TOTAL_G | TOTAL_M | TOTAL_K | TOTAL_B;
 
   return true;
 }
@@ -344,7 +346,7 @@ process()
   else
     no_match_regex = 0;
 
-  /*--------------------------------------------------------*/
+  //------------
 
   /* Get Max Directory Length */
 
@@ -355,13 +357,13 @@ process()
   for (uint i = 0; i < num_directories; ++i)
     max_directory_length = std::max(max_directory_length, uint(directory_list[i].size()));
 
-  /*--------------------------------------------------------*/
+  //------------
 
   /* Get Current Time */
 
   current_time = time(0);
 
-  /*--------------------------------------------------------*/
+  //------------
 
   /* Process List of Directories */
 
@@ -380,24 +382,23 @@ processDirectory(const std::string &directory, int num_directories)
 
   total_usage = 0;
 
-  /*--------------------------------------------------------*/
+  //------------
 
   /* Output Directory Header if more than one directory is
      being processed */
 
   if (num_directories > 1) {
     if (! short_form && ! short_line_form && ! stream_form) {
-      std::cout << std::endl;
-      std::cout << "--------------- Directory \'" << directory <<
-                   "\' ---------------" << std::endl;
-      std::cout << std::endl;
+      std::cout << "\n";
+      std::cout << "--------------- Directory \'" << directory << "\' ---------------\n";
+      std::cout << "\n";
     }
     else {
       if (display_largest || display_smallest || display_oldest  || display_newest) {
         std::cout << directory;
 
         if (! short_line_form)
-          std::cout << std::endl;
+          std::cout << "\n";
       }
       else {
         CStrUtil::sprintf(format_string, "%%-%ds", max_directory_length);
@@ -405,12 +406,12 @@ processDirectory(const std::string &directory, int num_directories)
         std::cout << CStrUtil::strprintf(format_string.c_str(), directory.c_str());
 
         if (! short_line_form)
-          std::cout << std::endl;
+          std::cout << "\n";
       }
     }
   }
 
-  /*--------------------------------------------------------*/
+  //------------
 
   /* Process all Files in the Directory */
 
@@ -418,15 +419,15 @@ processDirectory(const std::string &directory, int num_directories)
 
   walk.walk();
 
-  /*--------------------------------------------------------*/
+  //------------
 
   /* Display Largest File List if Requested */
 
   if (display_largest) {
     max_name_length = 0;
 
-    for_each(largest_file_list.begin(), largest_file_list.end(),
-             std::bind1st(std::mem_fun(&CUsage::setFileSpecLength), this));
+    for (const auto &largest_file : largest_file_list)
+      setFileSpecLength(largest_file);
 
     if      (! short_form && ! short_line_form && ! stream_form)
       CStrUtil::sprintf(format_string, "%%-%ds %%8d", max_name_length);
@@ -436,28 +437,28 @@ processDirectory(const std::string &directory, int num_directories)
       CStrUtil::sprintf(format_string, "%%-%ds", max_name_length);
 
     if      (! short_form && ! short_line_form && ! stream_form) {
-      std::cout << "List of Top " << largest_file_list.size() << " Largest Files" << std::endl;
-      std::cout << std::endl;
+      std::cout << "List of Top " << largest_file_list.size() << " Largest Files\n";
+      std::cout << "\n";
     }
     else if (! stream_form)
-      std::cout << "Largest " << largest_file_list.size() << std::endl;
+      std::cout << "Largest " << largest_file_list.size() << "\n";
 
-    for_each(largest_file_list.begin(), largest_file_list.end(),
-             std::bind1st(std::mem_fun(&CUsage::printLargestFile), this));
+    for (const auto &largest_file : largest_file_list)
+      printLargestFile(largest_file);
 
     if (! short_form && ! short_line_form && ! stream_form)
-      std::cout << std::endl;
+      std::cout << "\n";
   }
 
-  /*--------------------------------------------------------*/
+  //------------
 
   /* Display Smallest File List if Requested */
 
   if (display_smallest) {
     max_name_length = 0;
 
-    for_each(smallest_file_list.begin(), smallest_file_list.end(),
-             std::bind1st(std::mem_fun(&CUsage::setFileSpecLength), this));
+    for (const auto &smallest_file : smallest_file_list)
+      setFileSpecLength(smallest_file);
 
     if      (! short_form && ! short_line_form && ! stream_form)
       CStrUtil::sprintf(format_string, "%%-%ds %%8d", max_name_length);
@@ -467,28 +468,28 @@ processDirectory(const std::string &directory, int num_directories)
       CStrUtil::sprintf(format_string, "%%-%ds", max_name_length);
 
     if      (! short_form && ! short_line_form && ! stream_form) {
-      std::cout << "List of Top " << smallest_file_list.size() << " Smallest Files" << std::endl;
-      std::cout << std::endl;
+      std::cout << "List of Top " << smallest_file_list.size() << " Smallest Files\n";
+      std::cout << "\n";
     }
     else if (! stream_form)
-      std::cout << "Smallest " << smallest_file_list.size() << std::endl;
+      std::cout << "Smallest " << smallest_file_list.size() << "\n";
 
-    for_each(smallest_file_list.begin(), smallest_file_list.end(),
-             std::bind1st(std::mem_fun(&CUsage::printSmallestFile), this));
+    for (const auto &smallest_file : smallest_file_list)
+      printSmallestFile(smallest_file);
 
     if (! short_form && ! short_line_form && ! stream_form)
-      std::cout << std::endl;
+      std::cout << "\n";
   }
 
-  /*--------------------------------------------------------*/
+  //------------
 
   /* Display Oldest File List if Requested */
 
   if (display_oldest) {
     max_name_length = 0;
 
-    for_each(oldest_file_list.begin(), oldest_file_list.end(),
-             std::bind1st(std::mem_fun(&CUsage::setFileSpecLength), this));
+    for (const auto &oldest_file : oldest_file_list)
+      setFileSpecLength(oldest_file);
 
     if      (! short_form && ! short_line_form && ! stream_form)
       CStrUtil::sprintf(format_string, "%%-%ds %%s", max_name_length);
@@ -498,28 +499,28 @@ processDirectory(const std::string &directory, int num_directories)
       CStrUtil::sprintf(format_string, "%%-%ds", max_name_length);
 
     if (! short_form && ! short_line_form && ! stream_form) {
-      std::cout << "List of Top " << oldest_file_list.size() << " Oldest Files" << std::endl;
-      std::cout << std::endl;
+      std::cout << "List of Top " << oldest_file_list.size() << " Oldest Files\n";
+      std::cout << "\n";
     }
     else if (! stream_form)
-      std::cout << "Oldest " << oldest_file_list.size() << std::endl;
+      std::cout << "Oldest " << oldest_file_list.size() << "\n";
 
-    for_each(oldest_file_list.begin(), oldest_file_list.end(),
-             std::bind1st(std::mem_fun(&CUsage::printOldestFile), this));
+    for (const auto &oldest_file : oldest_file_list)
+      printOldestFile(oldest_file);
 
     if (! short_form && ! short_line_form && ! stream_form)
-      std::cout << std::endl;
+      std::cout << "\n";
   }
 
-  /*--------------------------------------------------------*/
+  //------------
 
   /* Display Newest File List if Requested */
 
   if (display_newest) {
     max_name_length = 0;
 
-    for_each(newest_file_list.begin(), newest_file_list.end(),
-             std::bind1st(std::mem_fun(&CUsage::setFileSpecLength), this));
+    for (const auto &newest_file : newest_file_list)
+      setFileSpecLength(newest_file);
 
     if      (! short_form && ! short_line_form && ! stream_form)
       CStrUtil::sprintf(format_string, "%%-%ds %%s", max_name_length);
@@ -529,81 +530,90 @@ processDirectory(const std::string &directory, int num_directories)
       CStrUtil::sprintf(format_string, "%%-%ds", max_name_length);
 
     if (! short_form && ! short_line_form && ! stream_form) {
-      std::cout << "List of Top " << newest_file_list.size() << " Newest Files" << std::endl;
-      std::cout << std::endl;
+      std::cout << "List of Top " << newest_file_list.size() << " Newest Files\n";
+      std::cout << "\n";
     }
     else if (! stream_form)
-      std::cout << "Newest " << newest_file_list.size() << std::endl;
+      std::cout << "Newest " << newest_file_list.size() << "\n";
 
-    for_each(newest_file_list.begin(), newest_file_list.end(),
-             std::bind1st(std::mem_fun(&CUsage::printNewestFile), this));
+    for (const auto &newest_file : newest_file_list)
+      printNewestFile(newest_file);
 
     if (! short_form && ! short_line_form && ! stream_form)
       printf("\n");
   }
 
-  /*--------------------------------------------------------*/
+  //------------
 
   /* Display Directories if Requested */
 
   if (display_dirs)
     printDirUsages();
 
-  /*--------------------------------------------------------*/
+  //------------
 
   if (display_count) {
-    std::cout << "  " << CStrUtil::strprintf("%12d", num_files) << " Files" << std::endl;
-    std::cout << "  " << CStrUtil::strprintf("%12d", num_dirs ) << " Dirs" << std::endl;
+    std::cout << "  " << CStrUtil::strprintf("%12d", num_files) << " Files\n";
+    std::cout << "  " << CStrUtil::strprintf("%12d", num_dirs ) << " Dirs\n";
   }
 
-  /*--------------------------------------------------------*/
+  //------------
 
-  /* Display Total Usage in Bytes, Kilobytes and Megabytes */
+  /* Display Total Usage in Bytes, Kilobytes, Megabytes and Gigabytes */
 
   double total_usage_k = total_usage  /1024.0;
   double total_usage_m = total_usage_k/1024.0;
+  double total_usage_g = total_usage_m/1024.0;
 
   if      (! short_form && ! short_line_form && ! stream_form) {
     if (display_largest || display_smallest || display_oldest  || display_newest)
-      std::cout << "Total :-" << std::endl;
+      std::cout << "Total :-\n";
+
+    if (total_output & TOTAL_G)
+      std::cout << "  " << CStrUtil::strprintf("%12.2lf", total_usage_g) << " Gigabytes\n";
 
     if (total_output & TOTAL_M)
-      std::cout << "  " << CStrUtil::strprintf("%12.4lf", total_usage_m) <<
-                   " Megabytes" << std::endl;
+      std::cout << "  " << CStrUtil::strprintf("%12.2lf", total_usage_m) << " Megabytes\n";
 
     if (total_output & TOTAL_K)
-      std::cout << "  " << CStrUtil::strprintf("%12.2lf", total_usage_k) <<
-                   " Kilobytes" << std::endl;
+      std::cout << "  " << CStrUtil::strprintf("%12.2lf", total_usage_k) << " Kilobytes\n";
 
     if (total_output & TOTAL_B)
-      std::cout << "  " << CStrUtil::strprintf("%12.2ld", total_usage) << " Bytes" << std::endl;
+      std::cout << "  " << CStrUtil::strprintf("%12.2ld", total_usage) << " Bytes\n";
   }
   else if (! stream_form) {
     if (display_largest || display_smallest || display_oldest  || display_newest)
-      std::cout << "Total" << std::endl;
+      std::cout << "Total\n";
 
-    if (total_output & TOTAL_M) {
-      std::cout << "  " << CStrUtil::strprintf("%12.4lfMb", total_usage_m);
+    if (total_output & TOTAL_G) {
+      std::cout << "  " << CStrUtil::strprintf("%12.2lfMb", total_usage_g);
 
       if (! short_line_form)
-        std::cout << std::endl;
+        std::cout << "\n";
+    }
+
+    if (total_output & TOTAL_M) {
+      std::cout << "  " << CStrUtil::strprintf("%12.2lfMb", total_usage_m);
+
+      if (! short_line_form)
+        std::cout << "\n";
     }
 
     if (total_output & TOTAL_K) {
       std::cout << "  " << CStrUtil::strprintf("%12.2lfKb", total_usage_k);
 
       if (! short_line_form)
-        std::cout << std::endl;
+        std::cout << "\n";
     }
 
     if (total_output & TOTAL_B) {
       std::cout << "  " << CStrUtil::strprintf("%12ld", total_usage);
 
       if (! short_line_form)
-        std::cout << std::endl;
+        std::cout << "\n";
     }
 
-    std::cout << std::endl;
+    std::cout << "\n";
   }
   else
     std::cout << " ";
@@ -671,7 +681,7 @@ updateFileLists(const std::string &filename, const struct stat *ftw_stat, CFileT
       return;
   }
 
-  /*--------------------------------------------------------*/
+  //------------
 
   if (ignore_hidden) {
     std::string filename1 = filename;
@@ -688,7 +698,7 @@ updateFileLists(const std::string &filename, const struct stat *ftw_stat, CFileT
     }
   }
 
-  /*--------------------------------------------------------*/
+  //------------
 
   /* Process Directory */
 
@@ -713,7 +723,7 @@ updateFileLists(const std::string &filename, const struct stat *ftw_stat, CFileT
     return;
   }
 
-  /*--------------------------------------------------------*/
+  //------------
 
   /* If link add link size but don't include in file lists */
 
@@ -729,7 +739,7 @@ updateFileLists(const std::string &filename, const struct stat *ftw_stat, CFileT
     return;
   }
 
-  /*--------------------------------------------------------*/
+  //------------
 
   /* Ignore if older than specified days */
 
@@ -742,7 +752,7 @@ updateFileLists(const std::string &filename, const struct stat *ftw_stat, CFileT
       return;
   }
 
-  /*--------------------------------------------------------*/
+  //------------
 
   /* Update Total for Ordinary File */
 
@@ -1026,7 +1036,7 @@ printLargestFile(CUsageFileSpec *file_spec)
   if (! short_form && ! short_line_form && ! stream_form)
     std::cout << " " << CFileUtil::getTypeMime(type);
 
-  std::cout << std::endl;
+  std::cout << "\n";
 }
 
 // Routine used to Output a Smallest File.
@@ -1039,8 +1049,11 @@ printSmallestFile(CUsageFileSpec *file_spec)
   while (file_name.find("./") != std::string::npos)
     file_name = file_name.substr(2);
 
-  std::cout << CStrUtil::strprintf(format_string.c_str(), file_name.c_str(), file_spec->size) <<
-               std::endl;
+  std::cout << CStrUtil::strprintf(format_string.c_str(), file_name.c_str(), file_spec->size);
+
+  // Small files don't often have type
+
+  std::cout << "\n";
 }
 
 // Routine used to Output an Oldest File.
@@ -1048,20 +1061,18 @@ void
 CUsage::
 printOldestFile(CUsageFileSpec *file_spec)
 {
-  struct tm *tm;
-  char       time_string[256];
-
   std::string file_name = file_spec->name;
 
   while (file_name.find("./") != std::string::npos)
     file_name = file_name.substr(2);
 
-  tm = localtime(&file_spec->time);
+  struct tm *tm = localtime(&file_spec->time);
+
+  char time_string[256];
 
   strftime(time_string, 256, "%a %h %e %H:%M:%S %Z %Y", tm);
 
-  std::cout << CStrUtil::strprintf(format_string.c_str(), file_name.c_str(), time_string) <<
-               std::endl;
+  std::cout << CStrUtil::strprintf(format_string.c_str(), file_name.c_str(), time_string) << "\n";
 }
 
 // Routine used to Output an Newest File.
@@ -1069,20 +1080,18 @@ void
 CUsage::
 printNewestFile(CUsageFileSpec *file_spec)
 {
-  struct tm *tm;
-  char       time_string[256];
-
   std::string file_name = file_spec->name;
 
   while (file_name.find("./") != std::string::npos)
     file_name = file_name.substr(2);
 
-  tm = localtime(&file_spec->time);
+  char time_string[256];
+
+  struct tm *tm = localtime(&file_spec->time);
 
   strftime(time_string, 256, "%a %h %e %H:%M:%S %Z %Y", tm);
 
-  std::cout << CStrUtil::strprintf(format_string.c_str(), file_name.c_str(), time_string) <<
-               std::endl;
+  std::cout << CStrUtil::strprintf(format_string.c_str(), file_name.c_str(), time_string) << "\n";
 }
 
 void
@@ -1108,9 +1117,9 @@ printDirUsages()
     if ((*psdir1)->name.size() > max_len)
       max_len = (*psdir1)->name.size();
 
-  std::cout << std::endl;
-  std::cout << "Directory Usages :-" << std::endl;
-  std::cout << std::endl;
+  std::cout << "\n";
+  std::cout << "Directory Usages :-\n";
+  std::cout << "\n";
 
   psdir1 = dir_usage_list1.begin();
 
@@ -1121,10 +1130,10 @@ printDirUsages()
       CStrUtil::strprintf("%s%*.*s  %-10d", (*psdir1)->name.c_str(),
                           len1, len1, "", (*psdir1)->size);
 
-    std::cout << fmt << std::endl;
+    std::cout << fmt << "\n";
   }
 
-  std::cout << std::endl;
+  std::cout << "\n";
 }
 
 int
@@ -1153,11 +1162,11 @@ time_t
 CUsage::
 statTime(const struct stat *stat)
 {
-  if      (date_type == DATE_LAST_ACCESSED)
+  if      (date_type == CUsageDateType::LAST_ACCESSED)
     return stat->st_atime;
-  else if (date_type == DATE_LAST_MODIFIED)
+  else if (date_type == CUsageDateType::LAST_MODIFIED)
     return stat->st_mtime;
-  else if (date_type == DATE_LAST_CHANGED)
+  else if (date_type == CUsageDateType::LAST_CHANGED)
     return stat->st_ctime;
   else
     return stat->st_atime;
@@ -1175,7 +1184,7 @@ error(const char *format, ...)
 
   va_start(args, format);
 
-  std::cerr << "Unix Usage : " << CStrUtil::vstrprintf(format, &args) << std::endl;
+  std::cerr << "Unix Usage : " << CStrUtil::vstrprintf(format, &args) << "\n";
 
   va_end(args);
 }
