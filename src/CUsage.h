@@ -14,7 +14,7 @@
 #define TOTAL_K (1<<2)
 #define TOTAL_B (1<<3)
 
-#define DEFAULT_NUM_FILES 20
+#define DEFAULT_NUM_FILES 40
 #define DEFAULT_DIRECTORY "."
 
 enum class CUsageDateType {
@@ -47,15 +47,15 @@ usage_str[] = {
   "                     display the largest and oldest files.",
   "                     By default none of these lists will be displayed.",
   "    -n  <num_files>  Sets the number of the files displayed for all lists <num_files>",
-  "                     instead of the default 20.",
+  "                     instead of the default 40.",
   "    -nl <num_files>  Sets the number of the largest files displayed to <num_files>",
-  "                     instead of the the default 20.",
+  "                     instead of the the default 40.",
   "    -ns <num_files>  Sets the number of the smallest files displayed to <num_files>",
-  "                     instead of the the default 20.",
+  "                     instead of the the default 40.",
   "    -no <num_files>  Sets the number of the oldest files displayed to <num_files>",
-  "                     instead of the the default 20.",
+  "                     instead of the the default 40.",
   "    -nn <num_files>  Sets the number of the newest files displayed to <num_files>",
-  "                     instead of the the default 20.",
+  "                     instead of the the default 40.",
   "    -da              Uses the Last Access Time for date comparison.",
   "    -dc              Uses the Last Change Time for date comparison.",
   "    -dm              Uses the Last Modify Time for date comparison. (Default)",
