@@ -72,6 +72,7 @@ usage_str[] = {
   "    -mn <pattern>    Only display files not matching pattern",
   "    -mt <type>       Only display files matching type :=",
   "                       exe   - executable files",
+  "                       elf   - ELF files",
   "                       obj   - object files",
   "                       core  - core files",
   "                       image - image files",
@@ -104,7 +105,7 @@ class CUsageDirWalk : public CDirFTW {
 
 struct CUsageFileSpec {
   std::string name;
-  int         size { 0 };
+  size_t      size { 0 };
   time_t      time { };
 };
 
@@ -172,9 +173,9 @@ class CUsage {
    public:
     UnitsNum(size_t num) :
      num_(num) {
-      num_k_ = num   /1024.0;
-      num_m_ = num_k_/1024.0;
-      num_g_ = num_m_/1024.0;
+      num_k_ = double(num   )/1024.0;
+      num_m_ = double(num_k_)/1024.0;
+      num_g_ = double(num_m_)/1024.0;
     }
 
     size_t num() const { return num_; }

@@ -54,6 +54,7 @@
  *   -mn <pattern>    Only display files not matching pattern
  *   -mt <type>       Only display files matching type :=
  *                      exe   - executable files
+ *                      elf   - elf files
  *                      obj   - object files
  *                      core  - core files
  *                      image - image files
@@ -103,7 +104,7 @@ processOptions(int argc, char **argv)
         // -o <l|s|o|n|d|c>
         case 'o': {
           if (i < argc - 1) {
-            for (int j = 0; j < (int) strlen(argv[i + 1]); j++) {
+            for (int j = 0; j < int(strlen(argv[i + 1])); j++) {
               switch (argv[i + 1][j]) {
                 case 'l': display_largest  = true; break;
                 case 's': display_smallest = true; break;
@@ -133,15 +134,15 @@ processOptions(int argc, char **argv)
               int num_files1 = atoi(argv[i + 1]);
 
               if      (argv[i][2] == '\0') {
-                num_largest  = num_files1;
-                num_smallest = num_files1;
-                num_oldest   = num_files1;
-                num_newest   = num_files1;
+                num_largest  = uint(num_files1);
+                num_smallest = uint(num_files1);
+                num_oldest   = uint(num_files1);
+                num_newest   = uint(num_files1);
               }
-              else if (argv[i][2] == 'l') num_largest  = num_files1;
-              else if (argv[i][2] == 's') num_smallest = num_files1;
-              else if (argv[i][2] == 'o') num_oldest   = num_files1;
-              else if (argv[i][2] == 'n') num_newest   = num_files1;
+              else if (argv[i][2] == 'l') num_largest  = uint(num_files1);
+              else if (argv[i][2] == 's') num_smallest = uint(num_files1);
+              else if (argv[i][2] == 'o') num_oldest   = uint(num_files1);
+              else if (argv[i][2] == 'n') num_newest   = uint(num_files1);
 
               ++i;
             }
@@ -239,7 +240,7 @@ void
 CUsage::
 process()
 {
-  uint num_directories = directory_list.size();
+  uint num_directories = uint(directory_list.size());
 
   if (num_directories == 0)
     directory_list.push_back(DEFAULT_DIRECTORY);
@@ -290,7 +291,7 @@ process()
 
   max_directory_length = 1;
 
-  num_directories = directory_list.size();
+  num_directories = uint(directory_list.size());
 
   for (uint i = 0; i < num_directories; ++i)
     max_directory_length = std::max(max_directory_length, uint(directory_list[i].size()));
@@ -306,7 +307,7 @@ process()
   /* Process List of Directories */
 
   for (uint i = 0; i < num_directories; ++i)
-    processDirectory(directory_list[i], i);
+    processDirectory(directory_list[i], int(i));
 }
 
 // Process all files in the specified directory and produce a total space usage
@@ -494,7 +495,7 @@ processDirectory(const std::string &directory, int num_directories)
   //------------
 
   // Display Total Usage in Bytes, Kilobytes, Megabytes and Gigabytes
-  UnitsNum unitsTotal(total_usage);
+  auto unitsTotal = UnitsNum(size_t(total_usage));
 
   if      (! short_form && ! short_line_form && ! stream_form) {
     if (display_largest || display_smallest || display_oldest  || display_newest)
@@ -586,6 +587,11 @@ updateFileLists(const std::string &filename, const struct stat *ftw_stat, CFileT
     CFileType file_type = CFileUtil::getType(filename1);
 
     if (! match && match_type == "exe") {
+      if (file_type & CFILE_TYPE_APP_EXEC)
+        match = true;
+    }
+
+    if (! match && match_type == "elf") {
       if (file_type & CFILE_TYPE_BIN && file_type & CFILE_TYPE_EXEC)
         match = true;
     }
@@ -631,12 +637,12 @@ updateFileLists(const std::string &filename, const struct stat *ftw_stat, CFileT
 
       lstat(filename.c_str(), &my_stat);
 
-      addFileUsage(filename, my_stat.st_size);
+      addFileUsage(filename, size_t(my_stat.st_size));
     }
 
     // ... otherwise add directory node list size
     else {
-      addDirFileUsage(filename, ftw_stat->st_size);
+      addDirFileUsage(filename, size_t(ftw_stat->st_size));
     }
 
     ++num_dirs;
@@ -652,7 +658,7 @@ updateFileLists(const std::string &filename, const struct stat *ftw_stat, CFileT
 
     lstat(filename.c_str(), &my_stat);
 
-    addFileUsage(filename, my_stat.st_size);
+    addFileUsage(filename, size_t(my_stat.st_size));
 
     ++num_files;
 
@@ -665,7 +671,7 @@ updateFileLists(const std::string &filename, const struct stat *ftw_stat, CFileT
   if (num_days >= 0) {
     double cmp = difftime(current_time, ftw_stat->st_ctime);
 
-    int num_days1 = (int) (cmp/86400);
+    int num_days1 = int(cmp/86400);
 
     if (num_days1 > num_days)
       return;
@@ -674,7 +680,7 @@ updateFileLists(const std::string &filename, const struct stat *ftw_stat, CFileT
   //------------
 
   // Update Total for Ordinary File
-  addFileUsage(filename, ftw_stat->st_size);
+  addFileUsage(filename, size_t(ftw_stat->st_size));
 
   ++num_files;
 
@@ -684,7 +690,7 @@ updateFileLists(const std::string &filename, const struct stat *ftw_stat, CFileT
       auto *file_spec = new CUsageFileSpec;
 
       file_spec->name = filename;
-      file_spec->size = ftw_stat->st_size;
+      file_spec->size = size_t(ftw_stat->st_size);
       file_spec->time = statTime(ftw_stat);
 
       addLargestFileSpec(file_spec);
@@ -692,13 +698,13 @@ updateFileLists(const std::string &filename, const struct stat *ftw_stat, CFileT
     else {
       CUsageFileSpec *file_spec = largest_file_list.back();
 
-      if (ftw_stat->st_size > file_spec->size) {
+      if (size_t(ftw_stat->st_size) > file_spec->size) {
         largest_file_list.remove(file_spec);
 
         auto *file_spec1 = new CUsageFileSpec;
 
         file_spec1->name = filename;
-        file_spec1->size = ftw_stat->st_size;
+        file_spec1->size = size_t(ftw_stat->st_size);
         file_spec1->time = statTime(ftw_stat);
 
         addLargestFileSpec(file_spec1);
@@ -712,7 +718,7 @@ updateFileLists(const std::string &filename, const struct stat *ftw_stat, CFileT
       auto *file_spec = new CUsageFileSpec;
 
       file_spec->name = filename;
-      file_spec->size = ftw_stat->st_size;
+      file_spec->size = size_t(ftw_stat->st_size);
       file_spec->time = statTime(ftw_stat);
 
       addSmallestFileSpec(file_spec);
@@ -720,13 +726,13 @@ updateFileLists(const std::string &filename, const struct stat *ftw_stat, CFileT
     else {
       CUsageFileSpec *file_spec = smallest_file_list.back();
 
-      if (ftw_stat->st_size < file_spec->size) {
+      if (size_t(ftw_stat->st_size) < file_spec->size) {
         smallest_file_list.remove(file_spec);
 
         auto *file_spec1 = new CUsageFileSpec;
 
         file_spec1->name = filename;
-        file_spec1->size = ftw_stat->st_size;
+        file_spec1->size = size_t(ftw_stat->st_size);
         file_spec1->time = statTime(ftw_stat);
 
         addSmallestFileSpec(file_spec1);
@@ -740,7 +746,7 @@ updateFileLists(const std::string &filename, const struct stat *ftw_stat, CFileT
       auto *file_spec = new CUsageFileSpec;
 
       file_spec->name = filename;
-      file_spec->size = ftw_stat->st_size;
+      file_spec->size = size_t(ftw_stat->st_size);
       file_spec->time = statTime(ftw_stat);
 
       addOldestFileSpec(file_spec);
@@ -754,7 +760,7 @@ updateFileLists(const std::string &filename, const struct stat *ftw_stat, CFileT
         auto *file_spec1 = new CUsageFileSpec;
 
         file_spec1->name = filename;
-        file_spec1->size = ftw_stat->st_size;
+        file_spec1->size = size_t(ftw_stat->st_size);
         file_spec1->time = statTime(ftw_stat);
 
         addOldestFileSpec(file_spec1);
@@ -768,7 +774,7 @@ updateFileLists(const std::string &filename, const struct stat *ftw_stat, CFileT
       auto *file_spec = new CUsageFileSpec;
 
       file_spec->name = filename;
-      file_spec->size = ftw_stat->st_size;
+      file_spec->size = size_t(ftw_stat->st_size);
       file_spec->time = statTime(ftw_stat);
 
       addNewestFileSpec(file_spec);
@@ -782,7 +788,7 @@ updateFileLists(const std::string &filename, const struct stat *ftw_stat, CFileT
         auto *file_spec1 = new CUsageFileSpec;
 
         file_spec1->name = filename;
-        file_spec1->size = ftw_stat->st_size;
+        file_spec1->size = size_t(ftw_stat->st_size);
         file_spec1->time = statTime(ftw_stat);
 
         addNewestFileSpec(file_spec1);
@@ -925,7 +931,7 @@ addDirUsage(const std::string &dirname, size_t size, int depth)
     dir_usage = new CUsageDirUsage;
 
     dir_usage->name = dirname;
-    dir_usage->len  = dirname.size();
+    dir_usage->len  = int(dirname.size());
     dir_usage->size = 0;
 
     dir_usage_list[dirname] = dir_usage;
@@ -1044,7 +1050,7 @@ printDirUsages()
 
   for ( ; psdir1 != psdir2; ++psdir1)
     if ((*psdir1)->name.size() > max_len)
-      max_len = (*psdir1)->name.size();
+      max_len = uint((*psdir1)->name.size());
 
   //---
 
@@ -1057,7 +1063,7 @@ printDirUsages()
   for ( ; psdir1 != psdir2; ++psdir1) {
     if (! (*psdir1)->leaf) continue;
 
-    int len1 = max_len - (*psdir1)->len;
+    uint len1 = max_len - uint((*psdir1)->len);
 
     UnitsNum unitsSize((*psdir1)->size);
 
@@ -1098,7 +1104,7 @@ void
 CUsage::
 setFileSpecLength(CUsageFileSpec *file_spec)
 {
-  uint name_length = file_spec->name.size();
+  uint name_length = uint(file_spec->name.size());
 
   if (name_length > max_name_length)
     max_name_length = name_length;
