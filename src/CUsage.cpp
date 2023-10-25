@@ -48,7 +48,7 @@
  *   -s               Display Output in short form for easy batch processing.
  *   -sl              Display Output in short line form for easy batch processing.
  *   -S               Display Output in stream form for feeding into other commands
- *   -L               follow links
+ *   -L               Follow links
  *   -H               Ignore hidden (dot files)
  *   -mp <pattern>    Only display files matching pattern
  *   -mn <pattern>    Only display files not matching pattern
@@ -59,6 +59,7 @@
  *                      core  - core files
  *                      image - image files
  *   -p <days>        Number of days in the past to check
+ *   -r               Reverse comparison
  *   <dir> ...        List of directories to process instead of the default current directory.
  *
  * Notes:
@@ -186,6 +187,7 @@ processOptions(int argc, char **argv)
         case 'S': stream_form   = true; break;
         case 'L': follow_links  = true; break;
         case 'H': ignore_hidden = true; break;
+        case 'r': reverse       = true; break;
         // mp, mn
         case 'm': {
           if      (argv[i][2] == 'p') {
@@ -300,7 +302,7 @@ process()
 
   /* Get Current Time */
 
-  current_time = time(0);
+  current_time = time(nullptr);
 
   //------------
 
@@ -555,11 +557,13 @@ processDirectory(const std::string &directory, int num_directories)
   newest_file_list  .clear();
 }
 
-void
+bool
 CUsageDirWalk::
 process()
 {
   unix_usage_->updateFileLists(getFileName(), getStat(), getType());
+
+  return true;
 }
 
 // Process each file updating the total usage and the largest, smallest, newest
@@ -673,8 +677,14 @@ updateFileLists(const std::string &filename, const struct stat *ftw_stat, CFileT
 
     int num_days1 = int(cmp/86400);
 
-    if (num_days1 > num_days)
-      return;
+    if (! reverse) {
+      if (num_days1 > num_days)
+        return;
+    }
+    else {
+      if (num_days1 < num_days)
+        return;
+    }
   }
 
   //------------
@@ -955,14 +965,14 @@ void
 CUsage::
 printLargestFile(CUsageFileSpec *file_spec)
 {
-  std::string file_name = file_spec->name;
+  auto file_name = file_spec->name;
 
   while (file_name.find("./") != std::string::npos)
     file_name = file_name.substr(2);
 
   std::cout << CStrUtil::strprintf(format_string.c_str(), file_name.c_str(), file_spec->size);
 
-  CFileType type = CFileUtil::getType(file_name);
+  auto type = CFileUtil::getType(file_name);
 
   if (! short_form && ! short_line_form && ! stream_form)
     std::cout << " " << CFileUtil::getTypeMime(type);
@@ -975,7 +985,7 @@ void
 CUsage::
 printSmallestFile(CUsageFileSpec *file_spec)
 {
-  std::string file_name = file_spec->name;
+  auto file_name = file_spec->name;
 
   while (file_name.find("./") != std::string::npos)
     file_name = file_name.substr(2);
@@ -992,12 +1002,12 @@ void
 CUsage::
 printOldestFile(CUsageFileSpec *file_spec)
 {
-  std::string file_name = file_spec->name;
+  auto file_name = file_spec->name;
 
   while (file_name.find("./") != std::string::npos)
     file_name = file_name.substr(2);
 
-  struct tm *tm = localtime(&file_spec->time);
+  auto *tm = localtime(&file_spec->time);
 
   char time_string[256];
 
@@ -1011,14 +1021,14 @@ void
 CUsage::
 printNewestFile(CUsageFileSpec *file_spec)
 {
-  std::string file_name = file_spec->name;
+  auto file_name = file_spec->name;
 
   while (file_name.find("./") != std::string::npos)
     file_name = file_name.substr(2);
 
   char time_string[256];
 
-  struct tm *tm = localtime(&file_spec->time);
+  auto *tm = localtime(&file_spec->time);
 
   strftime(time_string, 256, "%a %h %e %H:%M:%S %Z %Y", tm);
 

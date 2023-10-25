@@ -95,7 +95,7 @@ class CUsageDirWalk : public CDirFTW {
    CDirFTW(dirname), unix_usage_(unix_usage) {
   }
 
-  void process();
+  bool process() override;
 
  private:
   CUsage *unix_usage_ { nullptr };
@@ -209,6 +209,7 @@ class CUsage {
   bool           stream_form          { false };
   bool           follow_links         { false };
   bool           ignore_hidden        { false };
+  bool           reverse              { false };
   int            total_output         { 0 };
   DirNameList    directory_list;
   uint           num_largest          { DEFAULT_NUM_FILES };
